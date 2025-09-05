@@ -1,7 +1,11 @@
 [package]
 name = "bevy_power"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
 bevy = "0.16.1"
+
+[[example]]
+name = "power_demo"
+path = "examples/power_demo.rs"
