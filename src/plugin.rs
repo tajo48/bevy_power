@@ -111,16 +111,112 @@ impl PowerBundle {
 
 /// System parameters for convenient power system access
 #[derive(SystemParam)]
-pub struct PowerSystem<'w> {
+pub struct PowerSystem<'w, 's> {
     pub spend_events: EventWriter<'w, SpendPowerEvent>,
     pub change_events: EventWriter<'w, PowerChangeEvent>,
     pub limit_events: EventWriter<'w, ApplyLimitEvent>,
     pub lift_events: EventWriter<'w, LiftLimitEvent>,
     pub revive_events: EventWriter<'w, ReviveEvent>,
+    pub power_query: Query<'w, 's, (&'static mut PowerBar, Option<&'static PowerLimits>)>,
 }
 
-impl<'w> PowerSystem<'w> {
-    /// Spend power from an entity
+impl<'w, 's> PowerSystem<'w, 's> {
+    /// Check if an entity can afford to spend the specified amount of power
+    pub fn can_afford(&self, entity: Entity, amount: f32) -> bool {
+        if let Ok((power_bar, _)) = self.power_query.get(entity) {
+            !power_bar.is_knocked_out && power_bar.current > amount
+        } else {
+            false
+        }
+    }
+
+    /// Try to spend power from an entity, returns true if successful
+    pub fn try_spend(&mut self, entity: Entity, amount: f32) -> bool {
+        if self.can_afford(entity, amount) {
+            self.spend_events.write(SpendPowerEvent { entity, amount });
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Try to apply a points-based limit, returns true if successful
+    pub fn try_limit_points(
+        &mut self,
+        entity: Entity,
+        id: u32,
+        points: f32,
+        color: Color,
+        duration: Option<f32>,
+        resets_cooldown: bool,
+        stops_regeneration: bool,
+    ) -> bool {
+        // Check if applying this limit would cause a knockout
+        if let Ok((power_bar, limits)) = self.power_query.get(entity) {
+            let total_current_reduction = limits.map(|l| l.total_reduction()).unwrap_or(0.0);
+            let new_total_reduction = total_current_reduction + points;
+            let new_max = (power_bar.base_max - new_total_reduction).max(0.0);
+            let new_current = power_bar.current.min(new_max);
+
+            // Only apply if it won't cause knockout (max > 0 and current > 0)
+            if new_max > 0.0 && new_current > 0.0 {
+                self.limit_events.write(ApplyLimitEvent::points(
+                    entity,
+                    id,
+                    points,
+                    color,
+                    duration,
+                    resets_cooldown,
+                    stops_regeneration,
+                ));
+                true
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    }
+
+    /// Try to apply a percentage-based limit, returns true if successful
+    pub fn try_limit_percentage(
+        &mut self,
+        entity: Entity,
+        id: u32,
+        percentage: f32,
+        color: Color,
+        duration: Option<f32>,
+        resets_cooldown: bool,
+        stops_regeneration: bool,
+    ) -> bool {
+        // Check if applying this limit would cause a knockout
+        if let Ok((power_bar, limits)) = self.power_query.get(entity) {
+            let percentage_points = power_bar.base_max * (percentage / 100.0);
+            let total_current_reduction = limits.map(|l| l.total_reduction()).unwrap_or(0.0);
+            let new_total_reduction = total_current_reduction + percentage_points;
+            let new_max = (power_bar.base_max - new_total_reduction).max(0.0);
+            let new_current = power_bar.current.min(new_max);
+
+            // Only apply if it won't cause knockout (max > 0 and current > 0)
+            if new_max > 0.0 && new_current > 0.0 {
+                self.limit_events.write(ApplyLimitEvent::percentage(
+                    entity,
+                    id,
+                    percentage,
+                    color,
+                    duration,
+                    resets_cooldown,
+                    stops_regeneration,
+                ));
+                true
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    }
+    /// Spend power from an entity (always sends event, may fail)
     pub fn spend(&mut self, entity: Entity, amount: f32) {
         self.spend_events.write(SpendPowerEvent { entity, amount });
     }

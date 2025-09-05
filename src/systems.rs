@@ -124,6 +124,12 @@ pub fn handle_lift_limit(
                 // Recalculate max power
                 let total_reduction = limits.total_reduction();
                 power_bar.max = (power_bar.base_max - total_reduction).max(0.0);
+
+                // If knocked out but now has max power, allow revival
+                if power_bar.is_knocked_out && power_bar.max > 0.0 {
+                    power_bar.is_knocked_out = false;
+                    power_bar.current = power_bar.current.min(power_bar.max);
+                }
             }
         }
     }

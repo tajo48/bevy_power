@@ -1,13 +1,17 @@
 use bevy::prelude::*;
 use bevy_power::prelude::*;
 
+#[derive(Resource, Default)]
+struct LimitMethodToggle {
+    use_try_methods: bool,
+}
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(PowerSystemPlugin)
         .add_systems(Startup, setup)
-        .add_systems(Update, handle_keyboard_input)
-        .add_systems(Update, display_power_info)
+        .add_systems(Update, (handle_keyboard_input, display_power_info))
         .run();
 }
 
@@ -18,6 +22,9 @@ struct Player;
 struct PowerInfo;
 
 fn setup(mut commands: Commands) {
+    // Insert the toggle resource
+    commands.insert_resource(LimitMethodToggle::default());
+
     // Camera
     commands.spawn(Camera2d::default());
 
@@ -53,7 +60,7 @@ fn setup(mut commands: Commands) {
                                     A - Add 20 power\n\
                                     L - Apply limit (20 points)\n\
                                     P - Apply percentage limit (25%)\n\
-                                    T - Apply timed limit (5 seconds)\n\
+                                    T - Apply timed limit (5 seconds) / Toggle method\n\
                                     1 - Remove limit 1\n\
                                     2 - Remove limit 2\n\
                                     3 - Remove limit 3\n\
@@ -61,7 +68,8 @@ fn setup(mut commands: Commands) {
                                     V - Revive player\n\
                                     \n\
                                     Power regenerates after 2.5s of not spending\n\
-                                    Timer limits will expire automatically",
+                                    Timer limits will expire automatically\n\
+                                    T key: Toggle between try_limit (safe) and limit (force) methods"
                 ))
                 .insert(TextColor(Color::WHITE));
         });
@@ -72,129 +80,170 @@ fn setup(mut commands: Commands) {
 fn handle_keyboard_input(
     keyboard: Res<ButtonInput<KeyCode>>,
     player_query: Query<Entity, With<Player>>,
-    mut spend_events: EventWriter<SpendPowerEvent>,
-    mut change_events: EventWriter<PowerChangeEvent>,
-    mut limit_events: EventWriter<ApplyLimitEvent>,
-    mut lift_events: EventWriter<LiftLimitEvent>,
-    mut revive_events: EventWriter<ReviveEvent>,
+    mut power_system: PowerSystem,
+    mut toggle: ResMut<LimitMethodToggle>,
 ) {
     let Ok(player_entity) = player_query.single() else {
         return;
     };
 
-    // Space - Spend 10 power
+    // Space - Try to spend 10 power
     if keyboard.just_pressed(KeyCode::Space) {
-        spend_events.write(SpendPowerEvent {
-            entity: player_entity,
-            amount: 10.0,
-        });
-        info!("Spent 10 power");
+        if power_system.try_spend(player_entity, 10.0) {
+            info!("Successfully spent 10 power");
+        } else {
+            info!("Failed to spend 10 power - insufficient power!");
+        }
     }
 
-    // S - Spend 30 power
+    // S - Try to spend 30 power
     if keyboard.just_pressed(KeyCode::KeyS) {
-        spend_events.write(SpendPowerEvent {
-            entity: player_entity,
-            amount: 30.0,
-        });
-        info!("Spent 30 power");
+        if power_system.try_spend(player_entity, 30.0) {
+            info!("Successfully spent 30 power");
+        } else {
+            info!("Failed to spend 30 power - insufficient power!");
+        }
     }
 
     // A - Add 20 power
     if keyboard.just_pressed(KeyCode::KeyA) {
-        change_events.write(PowerChangeEvent {
-            entity: player_entity,
-            amount: 20.0,
-        });
+        power_system.change(player_entity, 20.0);
         info!("Added 20 power");
     }
 
     // L - Apply fixed limit
     if keyboard.just_pressed(KeyCode::KeyL) {
-        limit_events.write(ApplyLimitEvent::points(
-            player_entity,
-            1,
-            20.0,
-            Color::srgba(0.8, 0.0, 0.8, 0.7),
-            None,
-            false,
-            false,
-        ));
-        info!("Applied 20 point limit");
+        if toggle.use_try_methods {
+            if power_system.try_limit_points(
+                player_entity,
+                1,
+                20.0,
+                Color::srgba(0.8, 0.0, 0.8, 0.7),
+                None,
+                false,
+                false,
+            ) {
+                info!("Successfully applied 20 point limit (try_method)");
+            } else {
+                info!("Failed to apply point limit (try_method)");
+            }
+        } else {
+            power_system.limit_points(
+                player_entity,
+                1,
+                20.0,
+                Color::srgba(0.8, 0.0, 0.8, 0.7),
+                None,
+                false,
+                false,
+            );
+            info!("Applied 20 point limit (force method)");
+        }
     }
 
     // P - Apply percentage limit
     if keyboard.just_pressed(KeyCode::KeyP) {
-        limit_events.write(ApplyLimitEvent::percentage(
-            player_entity,
-            2,
-            25.0,
-            Color::srgba(0.8, 0.8, 0.0, 0.7),
-            None,
-            true,
-            true,
-        ));
-        info!("Applied 25% limit (resets cooldown & stops regen)");
+        if toggle.use_try_methods {
+            if power_system.try_limit_percentage(
+                player_entity,
+                2,
+                25.0,
+                Color::srgba(0.8, 0.8, 0.0, 0.7),
+                None,
+                true,
+                true,
+            ) {
+                info!("Successfully applied 25% limit (try_method, resets cooldown & stops regen)");
+            } else {
+                info!("Failed to apply percentage limit (try_method)");
+            }
+        } else {
+            power_system.limit_percentage(
+                player_entity,
+                2,
+                25.0,
+                Color::srgba(0.8, 0.8, 0.0, 0.7),
+                None,
+                true,
+                true,
+            );
+            info!("Applied 25% limit (force method, resets cooldown & stops regen)");
+        }
     }
 
-    // T - Apply timed limit
+    // T - Toggle method or apply timed limit (depending on modifier)
     if keyboard.just_pressed(KeyCode::KeyT) {
-        limit_events.write(ApplyLimitEvent::points(
-            player_entity,
-            3,
-            15.0,
-            Color::srgba(0.0, 0.8, 0.8, 0.7),
-            Some(5.0),
-            false,
-            false,
-        ));
-        info!("Applied timed limit (5 seconds) - will auto-expire");
+        // Check if Shift is held to apply timed limit, otherwise toggle method
+        if keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight) {
+            if toggle.use_try_methods {
+                if power_system.try_limit_points(
+                    player_entity,
+                    3,
+                    15.0,
+                    Color::srgba(0.0, 0.8, 0.8, 0.7),
+                    Some(5.0),
+                    false,
+                    false,
+                ) {
+                    info!("Successfully applied timed limit (try_method, 5 seconds) - will auto-expire");
+                } else {
+                    info!("Failed to apply timed limit (try_method)");
+                }
+            } else {
+                power_system.limit_points(
+                    player_entity,
+                    3,
+                    15.0,
+                    Color::srgba(0.0, 0.8, 0.8, 0.7),
+                    Some(5.0),
+                    false,
+                    false,
+                );
+                info!("Applied timed limit (force method, 5 seconds) - will auto-expire");
+            }
+        } else {
+            // Toggle method
+            toggle.use_try_methods = !toggle.use_try_methods;
+            info!(
+                "Switched to {} method",
+                if toggle.use_try_methods {
+                    "try_limit (safe)"
+                } else {
+                    "limit (force)"
+                }
+            );
+        }
     }
 
     // 1 - Remove limit 1
     if keyboard.just_pressed(KeyCode::Digit1) {
-        lift_events.write(LiftLimitEvent {
-            entity: player_entity,
-            id: 1,
-        });
+        power_system.lift(player_entity, 1);
         info!("Removed limit 1");
     }
 
     // 2 - Remove limit 2
     if keyboard.just_pressed(KeyCode::Digit2) {
-        lift_events.write(LiftLimitEvent {
-            entity: player_entity,
-            id: 2,
-        });
+        power_system.lift(player_entity, 2);
         info!("Removed limit 2");
     }
 
     // 3 - Remove limit 3
     if keyboard.just_pressed(KeyCode::Digit3) {
-        lift_events.write(LiftLimitEvent {
-            entity: player_entity,
-            id: 3,
-        });
+        power_system.lift(player_entity, 3);
         info!("Removed limit 3");
     }
 
     // R - Remove all limits
     if keyboard.just_pressed(KeyCode::KeyR) {
         for id in 1..=3 {
-            lift_events.write(LiftLimitEvent {
-                entity: player_entity,
-                id,
-            });
+            power_system.lift(player_entity, id);
         }
         info!("Removed all limits");
     }
 
     // V - Revive
     if keyboard.just_pressed(KeyCode::KeyV) {
-        revive_events.write(ReviveEvent {
-            entity: player_entity,
-            power_amount: 50.0,
-        });
+        power_system.revive(player_entity, 50.0);
         info!("Revived with 50 power");
     }
 }
@@ -202,6 +251,7 @@ fn handle_keyboard_input(
 fn display_power_info(
     power_query: Query<(&PowerBar, &PowerRegeneration, &PowerLimits), With<Player>>,
     time: Res<Time>,
+    toggle: Res<LimitMethodToggle>,
 ) {
     static mut LAST_LOG: f32 = 0.0;
 
@@ -222,14 +272,15 @@ fn display_power_info(
                 .count();
 
             info!(
-                "Power: {:.1}/{:.1} (base: {:.1}) | KO: {} | Regen: {} | Limits: {} (timers: {})",
+                "Power: {:.1}/{:.1} (base: {:.1}) | KO: {} | Regen: {} | Limits: {} (timers: {}) | Method: {}",
                 power_bar.current,
                 power_bar.max,
                 power_bar.base_max,
                 power_bar.is_knocked_out,
                 regen.is_active,
                 limits.limits.len(),
-                active_timers
+                active_timers,
+                if toggle.use_try_methods { "try_limit" } else { "limit" }
             );
         }
     }

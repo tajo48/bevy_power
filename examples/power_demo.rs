@@ -1,12 +1,25 @@
 use bevy::prelude::*;
 use bevy_power::prelude::*;
 
+#[derive(Resource, Default)]
+struct LimitMethodToggle {
+    use_try_methods: bool,
+}
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(PowerSystemPlugin)
         .add_systems(Startup, setup)
-        .add_systems(Update, (handle_button_clicks, update_button_states))
+        .add_systems(
+            Update,
+            (
+                handle_button_clicks,
+                update_button_states,
+                handle_keyboard_toggle,
+                update_method_status,
+            ),
+        )
         .run();
 }
 
@@ -24,12 +37,19 @@ enum DemoButton {
     LiftLimit { id: u32 },
     Revive,
     LevelUp,
+    ToggleLimitMethod,
 }
 
 #[derive(Component)]
 struct ButtonLabel;
 
+#[derive(Component)]
+struct MethodStatusText;
+
 fn setup(mut commands: Commands) {
+    // Insert the toggle resource
+    commands.insert_resource(LimitMethodToggle::default());
+
     // Camera
     commands.spawn(Camera2d::default());
 
@@ -68,13 +88,27 @@ fn create_demo_ui(commands: &mut Commands) {
 
             // Instructions
             parent.spawn((
-                Text::new("Power regenerates after 2.5s of not spending\nRegeneration ramps up over time\nTimed limits will expire automatically!"),
+                Text::new("Power regenerates after 2.5s of not spending\nRegeneration ramps up over time\nTimed limits will expire automatically!\nT key: Toggle between try_limit (safe) and limit (always applies)"),
                 TextFont {
                     font_size: 14.0,
                     ..default()
                 },
                 TextColor(Color::srgb(0.7, 0.7, 0.7)),
             ));
+
+            // Method status
+            parent
+                .spawn((
+                    Text::new("Method: try_limit (safe)"),
+                    TextFont {
+                        font_size: 16.0,
+                        ..default()
+                    },
+                    TextColor(Color::srgb(0.0, 1.0, 0.5)),
+                ))
+                .insert(MethodStatusText);
+
+
 
             // Button rows
             parent
@@ -426,6 +460,35 @@ fn create_demo_ui(commands: &mut Commands) {
                                 ))
                                 .insert(ButtonLabel);
                         });
+
+                    // Toggle Method
+                    parent
+                        .spawn((
+                            Button,
+                            Node {
+                                width: Val::Px(120.0),
+                                height: Val::Px(40.0),
+                                justify_content: JustifyContent::Center,
+                                align_items: AlignItems::Center,
+                                border: UiRect::all(Val::Px(2.0)),
+                                ..default()
+                            },
+                            BackgroundColor(Color::srgb(0.5, 0.2, 0.8)),
+                            BorderColor(Color::WHITE),
+                        ))
+                        .insert(DemoButton::ToggleLimitMethod)
+                        .with_children(|parent| {
+                            parent
+                                .spawn((
+                                    Text::new("Toggle Method"),
+                                    TextFont {
+                                        font_size: 14.0,
+                                        ..default()
+                                    },
+                                    TextColor(Color::WHITE),
+                                ))
+                                .insert(ButtonLabel);
+                        });
                 });
 
             // Status text
@@ -461,6 +524,7 @@ fn handle_button_clicks(
     mut power_system: PowerSystem,
     mut power_level_query: Query<&mut PowerLevel, With<Player>>,
     mut status_text: Query<&mut Text, With<StatusText>>,
+    toggle: Res<LimitMethodToggle>,
 ) {
     let Ok(player_entity) = player_query.single() else {
         return;
@@ -476,52 +540,109 @@ fn handle_button_clicks(
                 if let Ok(mut text) = status_text.single_mut() {
                     **text = match button {
                         DemoButton::SpendSmall => {
-                            power_system.spend(player_entity, 10.0);
-                            "Status: Spent 10 power".to_string()
+                            if power_system.try_spend(player_entity, 10.0) {
+                                "Status: Successfully spent 10 power".to_string()
+                            } else {
+                                "Status: Failed to spend 10 power - insufficient power!".to_string()
+                            }
                         }
                         DemoButton::SpendLarge => {
-                            power_system.spend(player_entity, 30.0);
-                            "Status: Spent 30 power".to_string()
+                            if power_system.try_spend(player_entity, 30.0) {
+                                "Status: Successfully spent 30 power".to_string()
+                            } else {
+                                "Status: Failed to spend 30 power - insufficient power!".to_string()
+                            }
                         }
                         DemoButton::AddPower => {
                             power_system.change(player_entity, 20.0);
                             "Status: Added 20 power".to_string()
                         }
                         DemoButton::ApplyPointsLimit => {
-                            power_system.limit_points(
-                                player_entity,
-                                1,
-                                20.0,
-                                Color::srgba(0.8, 0.0, 0.8, 0.7),
-                                None,
-                                false,
-                                false,
-                            );
-                            "Status: Applied 20 point limit".to_string()
+                            if toggle.use_try_methods {
+                                if power_system.try_limit_points(
+                                    player_entity,
+                                    1,
+                                    20.0,
+                                    Color::srgba(0.8, 0.0, 0.8, 0.7),
+                                    None,
+                                    false,
+                                    false,
+                                ) {
+                                    "Status: Successfully applied 20 point limit (try_method)"
+                                        .to_string()
+                                } else {
+                                    "Status: Failed to apply point limit (try_method)".to_string()
+                                }
+                            } else {
+                                power_system.limit_points(
+                                    player_entity,
+                                    1,
+                                    20.0,
+                                    Color::srgba(0.8, 0.0, 0.8, 0.7),
+                                    None,
+                                    false,
+                                    false,
+                                );
+                                "Status: Applied 20 point limit (force method)".to_string()
+                            }
                         }
                         DemoButton::ApplyPercentLimit => {
-                            power_system.limit_percentage(
-                                player_entity,
-                                2,
-                                25.0,
-                                Color::srgba(0.8, 0.8, 0.0, 0.7),
-                                None,
-                                true, // This one resets cooldown
-                                true, // This one stops regeneration
-                            );
-                            "Status: Applied 25% limit (resets cooldown & stops regen)".to_string()
+                            if toggle.use_try_methods {
+                                if power_system.try_limit_percentage(
+                                    player_entity,
+                                    2,
+                                    25.0,
+                                    Color::srgba(0.8, 0.8, 0.0, 0.7),
+                                    None,
+                                    true, // This one resets cooldown
+                                    true, // This one stops regeneration
+                                ) {
+                                    "Status: Successfully applied 25% limit (try_method, resets cooldown & stops regen)".to_string()
+                                } else {
+                                    "Status: Failed to apply percentage limit (try_method)"
+                                        .to_string()
+                                }
+                            } else {
+                                power_system.limit_percentage(
+                                    player_entity,
+                                    2,
+                                    25.0,
+                                    Color::srgba(0.8, 0.8, 0.0, 0.7),
+                                    None,
+                                    true, // This one resets cooldown
+                                    true, // This one stops regeneration
+                                );
+                                "Status: Applied 25% limit (force method, resets cooldown & stops regen)".to_string()
+                            }
                         }
                         DemoButton::ApplyTimedLimit => {
-                            power_system.limit_points(
-                                player_entity,
-                                3,
-                                15.0,
-                                Color::srgba(0.0, 0.8, 0.8, 0.7),
-                                Some(5.0), // 5 second duration
-                                false,
-                                false,
-                            );
-                            "Status: Applied timed limit (5s) - will auto-expire!".to_string()
+                            if toggle.use_try_methods {
+                                if power_system.try_limit_points(
+                                    player_entity,
+                                    3,
+                                    15.0,
+                                    Color::srgba(0.0, 0.8, 0.8, 0.7),
+                                    Some(5.0), // 5 second duration
+                                    false,
+                                    false,
+                                ) {
+                                    "Status: Successfully applied timed limit (try_method, 5s) - will auto-expire!".to_string()
+                                } else {
+                                    "Status: Failed to apply timed limit (try_method)".to_string()
+                                }
+                            } else {
+                                power_system.limit_points(
+                                    player_entity,
+                                    3,
+                                    15.0,
+                                    Color::srgba(0.0, 0.8, 0.8, 0.7),
+                                    Some(5.0), // 5 second duration
+                                    false,
+                                    false,
+                                );
+                                "Status: Applied timed limit (force method, 5s) - will auto-expire!"
+                                    .to_string()
+                            }
                         }
                         DemoButton::LiftLimit { id } => {
                             power_system.lift(player_entity, *id);
@@ -539,6 +660,16 @@ fn handle_button_clicks(
                             } else {
                                 "Status: Failed to level up".to_string()
                             }
+                        }
+                        DemoButton::ToggleLimitMethod => {
+                            format!(
+                                "Status: Currently using {} method (press T or click to toggle)",
+                                if toggle.use_try_methods {
+                                    "try_limit (safe)"
+                                } else {
+                                    "limit (force)"
+                                }
+                            )
                         }
                     };
                 }
@@ -568,7 +699,49 @@ fn update_button_states(
             DemoButton::LiftLimit { .. } => Color::srgb(0.4, 0.4, 0.8),
             DemoButton::Revive => Color::srgb(0.2, 0.8, 0.2),
             DemoButton::LevelUp => Color::srgb(0.8, 0.6, 0.0),
+            DemoButton::ToggleLimitMethod => Color::srgb(0.5, 0.2, 0.8),
         };
         bg_color.0 = base_color;
+    }
+}
+
+fn handle_keyboard_toggle(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut toggle: ResMut<LimitMethodToggle>,
+    mut interaction_query: Query<(&DemoButton, &mut BackgroundColor), With<Button>>,
+) {
+    if keyboard.just_pressed(KeyCode::KeyT) {
+        toggle.use_try_methods = !toggle.use_try_methods;
+
+        // Also trigger the toggle button visual feedback
+        for (button, mut bg_color) in &mut interaction_query {
+            if matches!(button, DemoButton::ToggleLimitMethod) {
+                bg_color.0 = bg_color.0.with_luminance(0.3);
+            }
+        }
+
+        info!(
+            "Switched to {} method",
+            if toggle.use_try_methods {
+                "try_limit (safe)"
+            } else {
+                "limit (force)"
+            }
+        );
+    }
+}
+
+fn update_method_status(
+    toggle: Res<LimitMethodToggle>,
+    mut method_text: Query<&mut Text, With<MethodStatusText>>,
+) {
+    if toggle.is_changed() {
+        if let Ok(mut text) = method_text.single_mut() {
+            **text = if toggle.use_try_methods {
+                "Method: try_limit (safe)".to_string()
+            } else {
+                "Method: limit (force)".to_string()
+            };
+        }
     }
 }

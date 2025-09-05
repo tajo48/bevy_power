@@ -9,3 +9,7 @@ bevy = "0.16.1"
 [[example]]
 name = "power_demo"
 path = "examples/power_demo.rs"
+
+[[example]]
+name = "dash_demo"
+path = "examples/dash_demo.rs"
