@@ -15,9 +15,7 @@ fn main() {
 struct Player;
 
 #[derive(Resource)]
-struct PowerInfo {
-    instructions_shown: bool,
-}
+struct PowerInfo;
 
 fn setup(mut commands: Commands) {
     // Camera
@@ -68,9 +66,7 @@ fn setup(mut commands: Commands) {
                 .insert(TextColor(Color::WHITE));
         });
 
-    commands.insert_resource(PowerInfo {
-        instructions_shown: true,
-    });
+    commands.insert_resource(PowerInfo);
 }
 
 fn handle_keyboard_input(
@@ -122,6 +118,7 @@ fn handle_keyboard_input(
             Color::srgba(0.8, 0.0, 0.8, 0.7),
             None,
             false,
+            false,
         ));
         info!("Applied 20 point limit");
     }
@@ -135,8 +132,9 @@ fn handle_keyboard_input(
             Color::srgba(0.8, 0.8, 0.0, 0.7),
             None,
             true,
+            true,
         ));
-        info!("Applied 25% limit (resets cooldown)");
+        info!("Applied 25% limit (resets cooldown & stops regen)");
     }
 
     // T - Apply timed limit
@@ -147,6 +145,7 @@ fn handle_keyboard_input(
             15.0,
             Color::srgba(0.0, 0.8, 0.8, 0.7),
             Some(5.0),
+            false,
             false,
         ));
         info!("Applied timed limit (5 seconds) - will auto-expire");

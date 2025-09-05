@@ -495,6 +495,7 @@ fn handle_button_clicks(
                                 Color::srgba(0.8, 0.0, 0.8, 0.7),
                                 None,
                                 false,
+                                false,
                             );
                             "Status: Applied 20 point limit".to_string()
                         }
@@ -506,8 +507,9 @@ fn handle_button_clicks(
                                 Color::srgba(0.8, 0.8, 0.0, 0.7),
                                 None,
                                 true, // This one resets cooldown
+                                true, // This one stops regeneration
                             );
-                            "Status: Applied 25% limit (resets cooldown)".to_string()
+                            "Status: Applied 25% limit (resets cooldown & stops regen)".to_string()
                         }
                         DemoButton::ApplyTimedLimit => {
                             power_system.limit_points(
@@ -516,6 +518,7 @@ fn handle_button_clicks(
                                 15.0,
                                 Color::srgba(0.0, 0.8, 0.8, 0.7),
                                 Some(5.0), // 5 second duration
+                                false,
                                 false,
                             );
                             "Status: Applied timed limit (5s) - will auto-expire!".to_string()

@@ -36,11 +36,12 @@ impl PowerBar {
     }
 
     /// Spend power, returns true if successful
+    /// Prevents spending power that would result in knockout (power going to 0 or below)
     pub fn spend(&mut self, amount: f32) -> bool {
-        if self.is_knocked_out || self.current < amount {
+        if self.is_knocked_out || self.current <= amount {
             return false;
         }
-        self.current = (self.current - amount).max(0.0);
+        self.current -= amount;
         true
     }
 

@@ -109,54 +109,6 @@ impl PowerBundle {
     }
 }
 
-/// Helper trait for easier power system interaction
-pub trait PowerSystemExt {
-    /// Spend power from this entity
-    fn spend_power(&self, entity: Entity, amount: f32);
-
-    /// Add power to this entity
-    fn add_power(&self, entity: Entity, amount: f32);
-
-    /// Apply a power limit
-    fn apply_limit(
-        &self,
-        entity: Entity,
-        id: u32,
-        limit_type: crate::limits::LimitType,
-        color: Color,
-        duration: Option<f32>,
-        resets_cooldown: bool,
-    );
-
-    /// Remove a power limit
-    fn lift_limit(&self, entity: Entity, id: u32);
-
-    /// Revive a knocked out entity
-    fn revive(&self, entity: Entity, power_amount: f32);
-}
-
-impl PowerSystemExt for EventWriter<'_, SpendPowerEvent> {
-    fn spend_power(&self, _entity: Entity, _amount: f32) {
-        // This would need to be implemented differently
-        // as we can't send events from a trait impl directly
-        // This is more for demonstration of the API
-    }
-
-    fn add_power(&self, _entity: Entity, _amount: f32) {}
-    fn apply_limit(
-        &self,
-        _entity: Entity,
-        _id: u32,
-        _limit_type: crate::limits::LimitType,
-        _color: Color,
-        _duration: Option<f32>,
-        _resets_cooldown: bool,
-    ) {
-    }
-    fn lift_limit(&self, _entity: Entity, _id: u32) {}
-    fn revive(&self, _entity: Entity, _power_amount: f32) {}
-}
-
 /// System parameters for convenient power system access
 #[derive(SystemParam)]
 pub struct PowerSystem<'w> {
@@ -188,6 +140,7 @@ impl<'w> PowerSystem<'w> {
         color: Color,
         duration: Option<f32>,
         resets_cooldown: bool,
+        stops_regeneration: bool,
     ) {
         self.limit_events.write(ApplyLimitEvent::points(
             entity,
@@ -196,6 +149,7 @@ impl<'w> PowerSystem<'w> {
             color,
             duration,
             resets_cooldown,
+            stops_regeneration,
         ));
     }
 
@@ -208,6 +162,7 @@ impl<'w> PowerSystem<'w> {
         color: Color,
         duration: Option<f32>,
         resets_cooldown: bool,
+        stops_regeneration: bool,
     ) {
         self.limit_events.write(ApplyLimitEvent::percentage(
             entity,
@@ -216,6 +171,7 @@ impl<'w> PowerSystem<'w> {
             color,
             duration,
             resets_cooldown,
+            stops_regeneration,
         ));
     }
 

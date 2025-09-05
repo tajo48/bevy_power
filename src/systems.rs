@@ -49,16 +49,21 @@ pub fn handle_power_change(
 /// System to handle power regeneration
 pub fn regenerate_power(
     time: Res<Time>,
-    mut query: Query<(&mut PowerBar, &mut PowerRegeneration)>,
+    mut query: Query<(&mut PowerBar, &mut PowerRegeneration, Option<&PowerLimits>)>,
 ) {
     let delta = time.delta_secs();
 
-    for (mut power_bar, mut regen) in query.iter_mut() {
+    for (mut power_bar, mut regen, limits) in query.iter_mut() {
         if !power_bar.is_knocked_out {
-            regen.update(delta);
-            let regen_amount = regen.get_regen_amount(delta);
-            if regen_amount > 0.0 {
-                power_bar.add(regen_amount);
+            // Check if any limits prevent regeneration
+            let regeneration_blocked = limits.map(|l| l.any_stops_regeneration()).unwrap_or(false);
+
+            if !regeneration_blocked {
+                regen.update(delta);
+                let regen_amount = regen.get_regen_amount(delta);
+                if regen_amount > 0.0 {
+                    power_bar.add(regen_amount);
+                }
             }
         }
     }
@@ -78,6 +83,7 @@ pub fn handle_apply_limit(
                 event.color,
                 event.duration,
                 event.resets_cooldown,
+                event.stops_regeneration,
             );
 
             limits.add_limit(new_limit, power_bar.base_max);
@@ -130,7 +136,7 @@ pub fn update_limit_timers(
 ) {
     let delta = time.delta_secs();
 
-    for (entity, mut power_bar, mut limits) in query.iter_mut() {
+    for (_entity, mut power_bar, mut limits) in query.iter_mut() {
         let removed_ids = limits.update_timers(delta);
 
         // Update max power if any limits were removed
