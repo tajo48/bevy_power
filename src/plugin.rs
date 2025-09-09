@@ -155,7 +155,6 @@ impl<'w, 's> PowerSystem<'w, 's> {
         color: Color,
         duration: Option<f32>,
         resets_cooldown: bool,
-        stops_regeneration: bool,
     ) -> bool {
         if let Some(entity) = self.get_power_entity() {
             // Check if applying this limit would cause a knockout
@@ -174,7 +173,6 @@ impl<'w, 's> PowerSystem<'w, 's> {
                         color,
                         duration,
                         resets_cooldown,
-                        stops_regeneration,
                     ));
                     return true;
                 }
@@ -191,7 +189,6 @@ impl<'w, 's> PowerSystem<'w, 's> {
         color: Color,
         duration: Option<f32>,
         resets_cooldown: bool,
-        stops_regeneration: bool,
     ) -> bool {
         if let Some(entity) = self.get_power_entity() {
             // Check if applying this limit would cause a knockout
@@ -211,7 +208,6 @@ impl<'w, 's> PowerSystem<'w, 's> {
                         color,
                         duration,
                         resets_cooldown,
-                        stops_regeneration,
                     ));
                     return true;
                 }
@@ -243,7 +239,6 @@ impl<'w, 's> PowerSystem<'w, 's> {
         color: Color,
         duration: Option<f32>,
         resets_cooldown: bool,
-        stops_regeneration: bool,
     ) {
         if let Some(entity) = self.get_power_entity() {
             self.limit_events.write(ApplyLimitEvent::points(
@@ -253,7 +248,6 @@ impl<'w, 's> PowerSystem<'w, 's> {
                 color,
                 duration,
                 resets_cooldown,
-                stops_regeneration,
             ));
         }
     }
@@ -266,7 +260,6 @@ impl<'w, 's> PowerSystem<'w, 's> {
         color: Color,
         duration: Option<f32>,
         resets_cooldown: bool,
-        stops_regeneration: bool,
     ) {
         if let Some(entity) = self.get_power_entity() {
             self.limit_events.write(ApplyLimitEvent::percentage(
@@ -276,7 +269,6 @@ impl<'w, 's> PowerSystem<'w, 's> {
                 color,
                 duration,
                 resets_cooldown,
-                stops_regeneration,
             ));
         }
     }

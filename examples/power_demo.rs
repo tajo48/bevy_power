@@ -88,7 +88,7 @@ fn create_demo_ui(commands: &mut Commands) {
 
             // Instructions
             parent.spawn((
-                Text::new("Power regenerates after 2.5s of not spending\nRegeneration ramps up over time\nTimed limits will expire automatically!\nT key: Toggle between try_limit (safe) and limit (always applies)"),
+                Text::new("Power regenerates after 2.5s of not spending\nRegeneration ramps up over time\nTimed limits will expire automatically!\n'Reset' limits pause regen for 2.5s\nT key: Toggle between try_limit (safe) and limit (always applies)"),
                 TextFont {
                     font_size: 14.0,
                     ..default()
@@ -261,7 +261,7 @@ fn create_demo_ui(commands: &mut Commands) {
                         .with_children(|parent| {
                             parent
                                 .spawn((
-                                    Text::new("Limit 25%"),
+                                    Text::new("Limit 25% (reset)"),
                                     TextFont {
                                         font_size: 14.0,
                                         ..default()
@@ -560,7 +560,6 @@ fn handle_button_clicks(
                                     Color::srgba(0.8, 0.0, 0.8, 0.7),
                                     None,
                                     false,
-                                    false,
                                 ) {
                                     "Status: Successfully applied 20 point limit (try_method)"
                                         .to_string()
@@ -574,7 +573,6 @@ fn handle_button_clicks(
                                     Color::srgba(0.8, 0.0, 0.8, 0.7),
                                     None,
                                     false,
-                                    false,
                                 );
                                 "Status: Applied 20 point limit (force method)".to_string()
                             }
@@ -587,9 +585,8 @@ fn handle_button_clicks(
                                     Color::srgba(0.8, 0.8, 0.0, 0.7),
                                     None,
                                     true, // This one resets cooldown
-                                    true, // This one stops regeneration
                                 ) {
-                                    "Status: Successfully applied 25% limit (try_method, resets cooldown & stops regen)".to_string()
+                                    "Status: Successfully applied 25% limit (try_method, resets cooldown)".to_string()
                                 } else {
                                     "Status: Failed to apply percentage limit (try_method)"
                                         .to_string()
@@ -601,9 +598,9 @@ fn handle_button_clicks(
                                     Color::srgba(0.8, 0.8, 0.0, 0.7),
                                     None,
                                     true, // This one resets cooldown
-                                    true, // This one stops regeneration
                                 );
-                                "Status: Applied 25% limit (force method, resets cooldown & stops regen)".to_string()
+                                "Status: Applied 25% limit (force method, resets cooldown)"
+                                    .to_string()
                             }
                         }
                         DemoButton::ApplyTimedLimit => {
@@ -613,7 +610,6 @@ fn handle_button_clicks(
                                     15.0,
                                     Color::srgba(0.0, 0.8, 0.8, 0.7),
                                     Some(5.0), // 5 second duration
-                                    false,
                                     false,
                                 ) {
                                     "Status: Successfully applied timed limit (try_method, 5s) - will auto-expire!".to_string()
@@ -626,7 +622,6 @@ fn handle_button_clicks(
                                     15.0,
                                     Color::srgba(0.0, 0.8, 0.8, 0.7),
                                     Some(5.0), // 5 second duration
-                                    false,
                                     false,
                                 );
                                 "Status: Applied timed limit (force method, 5s) - will auto-expire!"

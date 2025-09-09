@@ -34,8 +34,6 @@ pub struct ApplyLimitEvent {
     pub duration: Option<f32>,
     /// Whether this limit resets the regeneration cooldown
     pub resets_cooldown: bool,
-    /// Whether this limit prevents regeneration while active
-    pub stops_regeneration: bool,
 }
 
 impl ApplyLimitEvent {
@@ -47,7 +45,6 @@ impl ApplyLimitEvent {
         color: Color,
         duration: Option<f32>,
         resets_cooldown: bool,
-        stops_regeneration: bool,
     ) -> Self {
         Self {
             entity,
@@ -56,7 +53,6 @@ impl ApplyLimitEvent {
             color,
             duration,
             resets_cooldown,
-            stops_regeneration,
         }
     }
 
@@ -68,7 +64,6 @@ impl ApplyLimitEvent {
         color: Color,
         duration: Option<f32>,
         resets_cooldown: bool,
-        stops_regeneration: bool,
     ) -> Self {
         Self {
             entity,
@@ -77,7 +72,6 @@ impl ApplyLimitEvent {
             color,
             duration,
             resets_cooldown,
-            stops_regeneration,
         }
     }
 }

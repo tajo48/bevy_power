@@ -69,6 +69,7 @@ fn setup(mut commands: Commands) {
                                     \n\
                                     Power regenerates after 2.5s of not spending\n\
                                     Timer limits will expire automatically\n\
+                                    Limits with 'resets cooldown' will pause regen for 2.5s\n\
                                     T key: Toggle between try_limit (safe) and limit (force) methods"
                 ))
                 .insert(TextColor(Color::WHITE));
@@ -109,27 +110,14 @@ fn handle_keyboard_input(
     // L - Apply fixed limit
     if keyboard.just_pressed(KeyCode::KeyL) {
         if toggle.use_try_methods {
-            if power_system.try_limit_points(
-                1,
-                20.0,
-                Color::srgba(0.8, 0.0, 0.8, 0.7),
-                None,
-                false,
-                false,
-            ) {
+            if power_system.try_limit_points(1, 20.0, Color::srgba(0.8, 0.0, 0.8, 0.7), None, false)
+            {
                 info!("Successfully applied 20 point limit (try_method)");
             } else {
                 info!("Failed to apply point limit (try_method)");
             }
         } else {
-            power_system.limit_points(
-                1,
-                20.0,
-                Color::srgba(0.8, 0.0, 0.8, 0.7),
-                None,
-                false,
-                false,
-            );
+            power_system.limit_points(1, 20.0, Color::srgba(0.8, 0.0, 0.8, 0.7), None, false);
             info!("Applied 20 point limit (force method)");
         }
     }
@@ -143,22 +131,14 @@ fn handle_keyboard_input(
                 Color::srgba(0.8, 0.8, 0.0, 0.7),
                 None,
                 true,
-                true,
             ) {
-                info!("Successfully applied 25% limit (try_method, resets cooldown & stops regen)");
+                info!("Successfully applied 25% limit (try_method, resets cooldown)");
             } else {
                 info!("Failed to apply percentage limit (try_method)");
             }
         } else {
-            power_system.limit_percentage(
-                2,
-                25.0,
-                Color::srgba(0.8, 0.8, 0.0, 0.7),
-                None,
-                true,
-                true,
-            );
-            info!("Applied 25% limit (force method, resets cooldown & stops regen)");
+            power_system.limit_percentage(2, 25.0, Color::srgba(0.8, 0.8, 0.0, 0.7), None, true);
+            info!("Applied 25% limit (force method, resets cooldown)");
         }
     }
 
@@ -173,7 +153,6 @@ fn handle_keyboard_input(
                     Color::srgba(0.0, 0.8, 0.8, 0.7),
                     Some(5.0),
                     false,
-                    false,
                 ) {
                     info!("Successfully applied timed limit (try_method, 5 seconds) - will auto-expire");
                 } else {
@@ -185,7 +164,6 @@ fn handle_keyboard_input(
                     15.0,
                     Color::srgba(0.0, 0.8, 0.8, 0.7),
                     Some(5.0),
-                    false,
                     false,
                 );
                 info!("Applied timed limit (force method, 5 seconds) - will auto-expire");

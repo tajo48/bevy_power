@@ -49,21 +49,16 @@ pub fn handle_power_change(
 /// System to handle power regeneration
 pub fn regenerate_power(
     time: Res<Time>,
-    mut query: Query<(&mut PowerBar, &mut PowerRegeneration, Option<&PowerLimits>)>,
+    mut query: Query<(&mut PowerBar, &mut PowerRegeneration)>,
 ) {
     let delta = time.delta_secs();
 
-    for (mut power_bar, mut regen, limits) in query.iter_mut() {
+    for (mut power_bar, mut regen) in query.iter_mut() {
         if !power_bar.is_knocked_out {
-            // Check if any limits prevent regeneration
-            let regeneration_blocked = limits.map(|l| l.any_stops_regeneration()).unwrap_or(false);
-
-            if !regeneration_blocked {
-                regen.update(delta);
-                let regen_amount = regen.get_regen_amount(delta);
-                if regen_amount > 0.0 {
-                    power_bar.add(regen_amount);
-                }
+            regen.update(delta);
+            let regen_amount = regen.get_regen_amount(delta);
+            if regen_amount > 0.0 {
+                power_bar.add(regen_amount);
             }
         }
     }
@@ -83,7 +78,6 @@ pub fn handle_apply_limit(
                 event.color,
                 event.duration,
                 event.resets_cooldown,
-                event.stops_regeneration,
             );
 
             limits.add_limit(new_limit, power_bar.base_max);
@@ -105,7 +99,7 @@ pub fn handle_apply_limit(
                 });
             }
 
-            // Reset cooldown if needed
+            // Reset cooldown if needed (stops regeneration for 2.5 seconds)
             if event.resets_cooldown {
                 regen.reset();
             }

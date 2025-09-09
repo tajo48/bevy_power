@@ -109,8 +109,7 @@ power_system.limit_points(
     20.0,                 // points to reduce
     Color::RED,           // UI color
     Some(5.0),           // duration (None = permanent)
-    false,               // reset regen cooldown?
-    true,                // prevent regeneration?
+    false,               // reset regen cooldown? (pauses regen for 2.5s)
 );
 ```
 
@@ -144,7 +143,7 @@ fn example_system(
     }
 
     // Limit operations with safe variants
-    if power_system.try_limit_points(1, 25.0, Color::PURPLE, Some(10.0), false, false) {
+    if power_system.try_limit_points(1, 25.0, Color::PURPLE, Some(10.0), false) {
         println!("Curse applied!");
     } else {
         println!("Target immune to curse!");
@@ -177,10 +176,10 @@ See `examples/dash_demo.rs` for a practical game ability system.
 
 ```rust
 // Fixed point reduction
-power_system.limit_points(1, 20.0, Color::RED, None, false, false);
+power_system.limit_points(1, 20.0, Color::RED, None, false);
 
-// Percentage-based reduction
-power_system.limit_percentage(2, 25.0, Color::YELLOW, Some(5.0), true, true);
+// Percentage-based reduction (resets cooldown)
+power_system.limit_percentage(2, 25.0, Color::YELLOW, Some(5.0), true);
 ```
 
 ### Timed Limits with Auto-Expiry
@@ -192,8 +191,7 @@ power_system.limit_points(
     30.0,           // Reduce max power by 30
     Color::PURPLE,  // UI visualization color
     Some(10.0),     // Duration in seconds
-    true,           // Reset regeneration cooldown when applied
-    false,          // Don't prevent regeneration
+    true,           // Reset regeneration cooldown when applied (pauses regen for 2.5s)
 );
 ```
 
@@ -253,6 +251,9 @@ let mut regen = PowerRegeneration {
 };
 ```
 
+### Cooldown Reset Behavior
+When a limit with `resets_cooldown: true` is applied, the regeneration timer is reset, causing a 2.5-second pause in power regeneration. This ensures that certain debuffs or abilities properly interrupt the regeneration flow.
+
 ### System Ordering
 
 The plugin uses system sets to ensure proper ordering:
@@ -278,12 +279,12 @@ The system provides two approaches for most operations:
 
 **Safe Methods** (recommended for gameplay):
 - `try_spend(amount)` - Won't cause knockout
-- `try_limit_points(id, points, color, duration, resets_cooldown, stops_regen)` - Won't apply if it would cause knockout
+- `try_limit_points(id, points, color, duration, resets_cooldown)` - Won't apply if it would cause knockout
 - `can_afford(amount)` - Check before spending
 
 **Direct Methods** (for system/admin use):
 - `spend(amount)` - Always attempts to spend
-- `limit_points(id, points, color, duration, resets_cooldown, stops_regen)` - Always applies limit
+- `limit_points(id, points, color, duration, resets_cooldown)` - Always applies limit
 - `change(amount)` - Direct power modification
 
 All methods now automatically operate on the entity with `PowerBar` component - no need to specify which entity!

@@ -292,7 +292,6 @@ fn handle_input(
                 Color::srgba(0.8, 0.0, 0.8, 0.7),
                 Some(5.0), // 5 second duration
                 false,
-                false,
             ) {
                 info!("Applied power limit (30 points for 5 seconds) using try_method");
             } else {
@@ -304,7 +303,6 @@ fn handle_input(
                 30.0,
                 Color::srgba(0.8, 0.0, 0.8, 0.7),
                 Some(5.0), // 5 second duration
-                false,
                 false,
             );
             info!("Applied power limit (30 points for 5 seconds) using force method");

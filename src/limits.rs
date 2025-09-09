@@ -22,8 +22,6 @@ pub struct PowerLimit {
     pub duration: Option<Timer>,
     /// Whether this limit resets the 2.5s cooldown when applied
     pub resets_cooldown: bool,
-    /// Whether this limit prevents regeneration while active
-    pub stops_regeneration: bool,
     /// Actual power value this limit takes
     pub power_value: f32,
 }
@@ -36,7 +34,6 @@ impl PowerLimit {
         color: Color,
         duration: Option<f32>,
         resets_cooldown: bool,
-        stops_regeneration: bool,
     ) -> Self {
         Self {
             id,
@@ -44,7 +41,6 @@ impl PowerLimit {
             color,
             duration: duration.map(|d| Timer::from_seconds(d, TimerMode::Once)),
             resets_cooldown,
-            stops_regeneration,
             power_value: 0.0,
         }
     }
@@ -120,11 +116,6 @@ impl PowerLimits {
     /// Check if any limit resets cooldown
     pub fn any_resets_cooldown(&self) -> bool {
         self.limits.iter().any(|l| l.resets_cooldown)
-    }
-
-    /// Check if any limit prevents regeneration
-    pub fn any_stops_regeneration(&self) -> bool {
-        self.limits.iter().any(|l| l.stops_regeneration)
     }
 
     /// Get all limit colors and their percentages for UI rendering
