@@ -79,17 +79,12 @@ fn setup(mut commands: Commands) {
 
 fn handle_keyboard_input(
     keyboard: Res<ButtonInput<KeyCode>>,
-    player_query: Query<Entity, With<Player>>,
     mut power_system: PowerSystem,
     mut toggle: ResMut<LimitMethodToggle>,
 ) {
-    let Ok(player_entity) = player_query.single() else {
-        return;
-    };
-
     // Space - Try to spend 10 power
     if keyboard.just_pressed(KeyCode::Space) {
-        if power_system.try_spend(player_entity, 10.0) {
+        if power_system.try_spend(10.0) {
             info!("Successfully spent 10 power");
         } else {
             info!("Failed to spend 10 power - insufficient power!");
@@ -98,7 +93,7 @@ fn handle_keyboard_input(
 
     // S - Try to spend 30 power
     if keyboard.just_pressed(KeyCode::KeyS) {
-        if power_system.try_spend(player_entity, 30.0) {
+        if power_system.try_spend(30.0) {
             info!("Successfully spent 30 power");
         } else {
             info!("Failed to spend 30 power - insufficient power!");
@@ -107,7 +102,7 @@ fn handle_keyboard_input(
 
     // A - Add 20 power
     if keyboard.just_pressed(KeyCode::KeyA) {
-        power_system.change(player_entity, 20.0);
+        power_system.change(20.0);
         info!("Added 20 power");
     }
 
@@ -115,7 +110,6 @@ fn handle_keyboard_input(
     if keyboard.just_pressed(KeyCode::KeyL) {
         if toggle.use_try_methods {
             if power_system.try_limit_points(
-                player_entity,
                 1,
                 20.0,
                 Color::srgba(0.8, 0.0, 0.8, 0.7),
@@ -129,7 +123,6 @@ fn handle_keyboard_input(
             }
         } else {
             power_system.limit_points(
-                player_entity,
                 1,
                 20.0,
                 Color::srgba(0.8, 0.0, 0.8, 0.7),
@@ -145,7 +138,6 @@ fn handle_keyboard_input(
     if keyboard.just_pressed(KeyCode::KeyP) {
         if toggle.use_try_methods {
             if power_system.try_limit_percentage(
-                player_entity,
                 2,
                 25.0,
                 Color::srgba(0.8, 0.8, 0.0, 0.7),
@@ -159,7 +151,6 @@ fn handle_keyboard_input(
             }
         } else {
             power_system.limit_percentage(
-                player_entity,
                 2,
                 25.0,
                 Color::srgba(0.8, 0.8, 0.0, 0.7),
@@ -177,7 +168,6 @@ fn handle_keyboard_input(
         if keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight) {
             if toggle.use_try_methods {
                 if power_system.try_limit_points(
-                    player_entity,
                     3,
                     15.0,
                     Color::srgba(0.0, 0.8, 0.8, 0.7),
@@ -191,7 +181,6 @@ fn handle_keyboard_input(
                 }
             } else {
                 power_system.limit_points(
-                    player_entity,
                     3,
                     15.0,
                     Color::srgba(0.0, 0.8, 0.8, 0.7),
@@ -217,33 +206,33 @@ fn handle_keyboard_input(
 
     // 1 - Remove limit 1
     if keyboard.just_pressed(KeyCode::Digit1) {
-        power_system.lift(player_entity, 1);
+        power_system.lift(1);
         info!("Removed limit 1");
     }
 
     // 2 - Remove limit 2
     if keyboard.just_pressed(KeyCode::Digit2) {
-        power_system.lift(player_entity, 2);
+        power_system.lift(2);
         info!("Removed limit 2");
     }
 
     // 3 - Remove limit 3
     if keyboard.just_pressed(KeyCode::Digit3) {
-        power_system.lift(player_entity, 3);
+        power_system.lift(3);
         info!("Removed limit 3");
     }
 
     // R - Remove all limits
     if keyboard.just_pressed(KeyCode::KeyR) {
         for id in 1..=3 {
-            power_system.lift(player_entity, id);
+            power_system.lift(id);
         }
         info!("Removed all limits");
     }
 
     // V - Revive
     if keyboard.just_pressed(KeyCode::KeyV) {
-        power_system.revive(player_entity, 50.0);
+        power_system.revive(50.0);
         info!("Revived with 50 power");
     }
 }

@@ -215,14 +215,14 @@ fn create_ui(commands: &mut Commands) {
 }
 
 fn handle_input(
-    mut player_query: Query<(Entity, &mut Player), With<Player>>,
+    mut player_query: Query<&mut Player, With<Player>>,
     mut power_system: PowerSystem,
     keyboard: Res<ButtonInput<KeyCode>>,
     settings: Res<DashSettings>,
     time: Res<Time>,
     toggle: Res<LimitMethodToggle>,
 ) {
-    let Ok((entity, mut player)) = player_query.single_mut() else {
+    let Ok(mut player) = player_query.single_mut() else {
         return;
     };
 
@@ -255,7 +255,7 @@ fn handle_input(
 
         if player.dash_cooldown.finished() {
             // Try to spend power for dash
-            if power_system.try_spend(entity, settings.power_cost) {
+            if power_system.try_spend(settings.power_cost) {
                 // Dash successful - add dash velocity
                 let dash_direction = if movement != Vec2::ZERO {
                     movement
@@ -280,14 +280,13 @@ fn handle_input(
 
     // Additional controls
     if keyboard.just_pressed(KeyCode::KeyR) {
-        power_system.change(entity, 20.0);
+        power_system.change(20.0);
         info!("Regenerated 20 power");
     }
 
     if keyboard.just_pressed(KeyCode::KeyL) {
         if toggle.use_try_methods {
             if power_system.try_limit_points(
-                entity,
                 1,
                 30.0,
                 Color::srgba(0.8, 0.0, 0.8, 0.7),
@@ -301,7 +300,6 @@ fn handle_input(
             }
         } else {
             power_system.limit_points(
-                entity,
                 1,
                 30.0,
                 Color::srgba(0.8, 0.0, 0.8, 0.7),
@@ -314,7 +312,7 @@ fn handle_input(
     }
 
     if keyboard.just_pressed(KeyCode::KeyC) {
-        power_system.lift(entity, 1);
+        power_system.lift(1);
         info!("Cleared power limits");
     }
 }
@@ -348,7 +346,7 @@ fn update_dash_cooldown(mut player_query: Query<&mut Player>, time: Res<Time>) {
 }
 
 fn update_ui(
-    player_query: Query<(Entity, &Player), With<Player>>,
+    player_query: Query<&Player, With<Player>>,
     power_query: Query<&PowerBar>,
     mut dash_ui_query: Query<&mut Text, (With<DashUI>, Without<StatusMessage>)>,
     mut status_query: Query<&mut Text, (With<StatusMessage>, Without<DashUI>)>,
@@ -356,11 +354,11 @@ fn update_ui(
     time: Res<Time>,
     toggle: Res<LimitMethodToggle>,
 ) {
-    let Ok((entity, player)) = player_query.single() else {
+    let Ok(player) = player_query.single() else {
         return;
     };
 
-    let Ok(power_bar) = power_query.get(entity) else {
+    let Ok(power_bar) = power_query.single() else {
         return;
     };
 

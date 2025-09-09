@@ -51,14 +51,11 @@ fn setup(mut commands: Commands) {
 
 fn handle_input(
     keyboard: Res<ButtonInput<KeyCode>>,
-    player_query: Query<Entity, With<Player>>,
     mut power_system: PowerSystem,
 ) {
-    let Ok(player) = player_query.single() else { return };
-
     if keyboard.just_pressed(KeyCode::Space) {
         // Try to spend 20 power (safe - won't cause knockout)
-        if power_system.try_spend(player, 20.0) {
+        if power_system.try_spend(20.0) {
             println!("Used special ability!");
         } else {
             println!("Not enough power!");
@@ -136,30 +133,27 @@ The `PowerSystem` provides a convenient interface for all power operations:
 ```rust
 fn example_system(
     mut power_system: PowerSystem,
-    player_query: Query<Entity, With<Player>>,
 ) {
-    let player = player_query.single().unwrap();
-
     // Safe operations (return bool for success)
-    if power_system.try_spend(player, 30.0) {
+    if power_system.try_spend(30.0) {
         println!("Spell cast successfully!");
     }
 
-    if power_system.can_afford(player, 50.0) {
+    if power_system.can_afford(50.0) {
         println!("Can afford ultimate ability");
     }
 
     // Limit operations with safe variants
-    if power_system.try_limit_points(player, 1, 25.0, Color::PURPLE, Some(10.0), false, false) {
+    if power_system.try_limit_points(1, 25.0, Color::PURPLE, Some(10.0), false, false) {
         println!("Curse applied!");
     } else {
         println!("Target immune to curse!");
     }
 
     // Direct operations (always execute)
-    power_system.change(player, 15.0);  // Add power
-    power_system.revive(player, 50.0);  // Revive from knockout
-    power_system.lift(player, 1);       // Remove limit by ID
+    power_system.change(15.0);  // Add power
+    power_system.revive(50.0);  // Revive from knockout
+    power_system.lift(1);       // Remove limit by ID
 }
 ```
 
@@ -183,10 +177,10 @@ See `examples/dash_demo.rs` for a practical game ability system.
 
 ```rust
 // Fixed point reduction
-power_system.limit_points(entity, 1, 20.0, Color::RED, None, false, false);
+power_system.limit_points(1, 20.0, Color::RED, None, false, false);
 
 // Percentage-based reduction
-power_system.limit_percentage(entity, 2, 25.0, Color::YELLOW, Some(5.0), true, true);
+power_system.limit_percentage(2, 25.0, Color::YELLOW, Some(5.0), true, true);
 ```
 
 ### Timed Limits with Auto-Expiry
@@ -194,7 +188,6 @@ power_system.limit_percentage(entity, 2, 25.0, Color::YELLOW, Some(5.0), true, t
 ```rust
 // This limit will automatically remove itself after 10 seconds
 power_system.limit_points(
-    entity,
     1,
     30.0,           // Reduce max power by 30
     Color::PURPLE,  // UI visualization color
@@ -284,14 +277,16 @@ All power operations generate events for maximum flexibility:
 The system provides two approaches for most operations:
 
 **Safe Methods** (recommended for gameplay):
-- `try_spend()` - Won't cause knockout
-- `try_limit_points()` - Won't apply if it would cause knockout
-- `can_afford()` - Check before spending
+- `try_spend(amount)` - Won't cause knockout
+- `try_limit_points(id, points, color, duration, resets_cooldown, stops_regen)` - Won't apply if it would cause knockout
+- `can_afford(amount)` - Check before spending
 
 **Direct Methods** (for system/admin use):
-- `spend()` - Always attempts to spend
-- `limit_points()` - Always applies limit
-- `change()` - Direct power modification
+- `spend(amount)` - Always attempts to spend
+- `limit_points(id, points, color, duration, resets_cooldown, stops_regen)` - Always applies limit
+- `change(amount)` - Direct power modification
+
+All methods now automatically operate on the entity with `PowerBar` component - no need to specify which entity!
 
 ## Performance
 

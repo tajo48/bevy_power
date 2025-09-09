@@ -520,16 +520,11 @@ fn handle_button_clicks(
         (&Interaction, &DemoButton, &mut BackgroundColor),
         (Changed<Interaction>, With<Button>),
     >,
-    player_query: Query<Entity, With<Player>>,
     mut power_system: PowerSystem,
     mut power_level_query: Query<&mut PowerLevel, With<Player>>,
     mut status_text: Query<&mut Text, With<StatusText>>,
     toggle: Res<LimitMethodToggle>,
 ) {
-    let Ok(player_entity) = player_query.single() else {
-        return;
-    };
-
     for (interaction, button, mut bg_color) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
@@ -540,27 +535,26 @@ fn handle_button_clicks(
                 if let Ok(mut text) = status_text.single_mut() {
                     **text = match button {
                         DemoButton::SpendSmall => {
-                            if power_system.try_spend(player_entity, 10.0) {
+                            if power_system.try_spend(10.0) {
                                 "Status: Successfully spent 10 power".to_string()
                             } else {
                                 "Status: Failed to spend 10 power - insufficient power!".to_string()
                             }
                         }
                         DemoButton::SpendLarge => {
-                            if power_system.try_spend(player_entity, 30.0) {
+                            if power_system.try_spend(30.0) {
                                 "Status: Successfully spent 30 power".to_string()
                             } else {
                                 "Status: Failed to spend 30 power - insufficient power!".to_string()
                             }
                         }
                         DemoButton::AddPower => {
-                            power_system.change(player_entity, 20.0);
+                            power_system.change(20.0);
                             "Status: Added 20 power".to_string()
                         }
                         DemoButton::ApplyPointsLimit => {
                             if toggle.use_try_methods {
                                 if power_system.try_limit_points(
-                                    player_entity,
                                     1,
                                     20.0,
                                     Color::srgba(0.8, 0.0, 0.8, 0.7),
@@ -575,7 +569,6 @@ fn handle_button_clicks(
                                 }
                             } else {
                                 power_system.limit_points(
-                                    player_entity,
                                     1,
                                     20.0,
                                     Color::srgba(0.8, 0.0, 0.8, 0.7),
@@ -589,7 +582,6 @@ fn handle_button_clicks(
                         DemoButton::ApplyPercentLimit => {
                             if toggle.use_try_methods {
                                 if power_system.try_limit_percentage(
-                                    player_entity,
                                     2,
                                     25.0,
                                     Color::srgba(0.8, 0.8, 0.0, 0.7),
@@ -604,7 +596,6 @@ fn handle_button_clicks(
                                 }
                             } else {
                                 power_system.limit_percentage(
-                                    player_entity,
                                     2,
                                     25.0,
                                     Color::srgba(0.8, 0.8, 0.0, 0.7),
@@ -618,7 +609,6 @@ fn handle_button_clicks(
                         DemoButton::ApplyTimedLimit => {
                             if toggle.use_try_methods {
                                 if power_system.try_limit_points(
-                                    player_entity,
                                     3,
                                     15.0,
                                     Color::srgba(0.0, 0.8, 0.8, 0.7),
@@ -632,7 +622,6 @@ fn handle_button_clicks(
                                 }
                             } else {
                                 power_system.limit_points(
-                                    player_entity,
                                     3,
                                     15.0,
                                     Color::srgba(0.0, 0.8, 0.8, 0.7),
@@ -645,11 +634,11 @@ fn handle_button_clicks(
                             }
                         }
                         DemoButton::LiftLimit { id } => {
-                            power_system.lift(player_entity, *id);
+                            power_system.lift(*id);
                             format!("Status: Lifted limit {}", id)
                         }
                         DemoButton::Revive => {
-                            power_system.revive(player_entity, 50.0);
+                            power_system.revive(50.0);
                             "Status: Revived with 50 power".to_string()
                         }
                         DemoButton::LevelUp => {
