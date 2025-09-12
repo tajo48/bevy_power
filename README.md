@@ -1,29 +1,30 @@
-# Bevy Power System
+# Bevy Power
 
-A flexible and feature-rich power management system for Bevy games. This crate provides components, events, and systems for managing player power/energy/mana with regeneration, limits, knockouts, leveling, and UI visualization.
+A comprehensive power/energy management system for Bevy games, featuring regeneration, limits, knockouts, leveling, and visual UI components.
 
 ## Features
 
-- **Power Management**: Track current/max power with automatic bounds checking
-- **Regeneration System**: Configurable power regeneration with delays and ramp-up
-- **Power Limits**: Apply temporary or permanent power restrictions
+- **Power Management**: Track current/max power with automatic validation
+- **Smart Regeneration**: Configurable delay and ramping regeneration rates
+- **Power Limits**: Temporary or permanent power restrictions (points or percentage-based)
 - **Knockout System**: Handle zero-power states with revival mechanics
-- **Level Progression**: Experience-based leveling with power bonuses
+- **Leveling System**: Experience-based progression with power bonuses
 - **Visual UI**: Built-in power bar with limit visualization
-- **Event-Driven**: Clean event-based API for all power operations
-- **Safe Operations**: Try-methods that prevent invalid state changes
+- **Safe Operations**: Try-methods that prevent invalid states
+- **Timer Support**: Auto-expiring limits and cooldown management
+- **Event-Driven**: Fully event-based architecture for loose coupling
 
-## Quick Start
+## Installation
 
-### 1. Add to Cargo.toml
+Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-bevy = "0.16.1"
 bevy_power = "0.1.0"
+bevy = "0.16"
 ```
 
-### 2. Basic Setup
+## Quick Start
 
 ```rust
 use bevy::prelude::*;
@@ -32,21 +33,17 @@ use bevy_power::prelude::*;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugins(PowerSystemPlugin)  // Add the power system
+        .add_plugins(PowerSystemPlugin)
         .add_systems(Startup, setup)
         .add_systems(Update, handle_input)
         .run();
 }
 
-#[derive(Component)]
-struct Player;
-
 fn setup(mut commands: Commands) {
-    // Spawn player with power system
-    commands.spawn((
-        PowerBundle::with_max_power(100.0),  // 100 max power
-        Player,
-    ));
+    commands.spawn(Camera2d::default());
+    
+    // Spawn entity with power system
+    commands.spawn(PowerBundle::with_max_power(100.0));
 }
 
 fn handle_input(
@@ -54,252 +51,353 @@ fn handle_input(
     mut power_system: PowerSystem,
 ) {
     if keyboard.just_pressed(KeyCode::Space) {
-        // Try to spend 20 power (safe - won't cause knockout)
-        if power_system.try_spend(20.0) {
-            println!("Used special ability!");
+        // Try to spend 10 power (safe method)
+        if power_system.try_spend(10.0) {
+            info!("Spent 10 power!");
         } else {
-            println!("Not enough power!");
+            info!("Not enough power!");
+        }
+    }
+    
+    if keyboard.just_pressed(KeyCode::KeyR) {
+        // Add 20 power
+        power_system.change(20.0);
+    }
+}
+```
+
+## Core Concepts
+
+### Power Bar
+
+The `PowerBar` component tracks current and maximum power:
+
+```rust
+// Current power, max power, and base max (before limits)
+pub struct PowerBar {
+    pub current: f32,
+    pub max: f32,        // Affected by limits
+    pub base_max: f32,   // Original maximum
+    pub is_knocked_out: bool,
+}
+```
+
+### Power Regeneration
+
+Configurable regeneration with delays and ramping:
+
+```rust
+let regen = PowerRegeneration {
+    regen_delay: 2.5,      // Wait 2.5s after spending
+    base_rate: 5.0,        // Start at 5 power/sec
+    max_rate: 20.0,        // Ramp up to 20 power/sec
+    ramp_speed: 2.0,       // How fast to ramp up
+    ..default()
+};
+```
+
+### Power Limits
+
+Apply temporary or permanent restrictions:
+
+```rust
+// Safe method - only applies if it won't cause knockout
+if power_system.try_limit_points(
+    1,                                    // Unique ID
+    20.0,                                // Reduce by 20 points
+    Color::RED,                          // UI color
+    Some(5.0),                          // Expires in 5 seconds
+    false                               // Doesn't reset regen cooldown
+) {
+    info!("Limit applied successfully!");
+}
+
+// Percentage-based limits
+power_system.try_limit_percentage(
+    2,                                    // Different ID
+    25.0,                                // Reduce by 25%
+    Color::YELLOW,
+    None,                               // Permanent until lifted
+    true                                // Resets regeneration cooldown
+);
+
+// Remove limits
+power_system.lift(1);  // Remove limit with ID 1
+```
+
+### Safe vs Force Methods
+
+The system provides two approaches for applying limits:
+
+```rust
+// Safe methods - check if operation is valid first
+if power_system.try_limit_points(1, 30.0, Color::RED, None, false) {
+    // Only executes if it won't cause knockout
+    info!("Limit safely applied");
+}
+
+// Force methods - always apply (may cause knockout)
+power_system.limit_points(1, 30.0, Color::RED, None, false);
+```
+
+### Knockout and Revival
+
+Handle zero-power states:
+
+```rust
+// Entities are knocked out when power reaches 0 or max power becomes 0
+// Revival restores power and removes knockout state
+power_system.revive(50.0);  // Revive with 50 power
+```
+
+## Power System API
+
+The `PowerSystem` provides convenient access to all power operations:
+
+```rust
+fn game_system(mut power_system: PowerSystem) {
+    // Spending power
+    if power_system.can_afford(25.0) {
+        power_system.try_spend(25.0);
+    }
+    
+    // Changing power
+    power_system.change(15.0);    // Add power
+    power_system.change(-5.0);    // Subtract power
+    
+    // Applying limits
+    power_system.try_limit_points(1, 20.0, Color::RED, Some(10.0), false);
+    power_system.try_limit_percentage(2, 30.0, Color::BLUE, None, true);
+    
+    // Managing limits
+    power_system.lift(1);         // Remove specific limit
+    
+    // Revival
+    power_system.revive(75.0);
+}
+```
+
+## Components and Bundles
+
+### PowerBundle
+
+Convenient bundle for spawning entities:
+
+```rust
+// Default settings (100 max power)
+commands.spawn(PowerBundle::default());
+
+// Custom max power
+commands.spawn(PowerBundle::with_max_power(150.0));
+
+// Full customization
+commands.spawn(PowerBundle::custom(
+    200.0,  // max_power
+    3.0,    // regen_delay
+    8.0,    // base_regen_rate  
+    25.0,   // max_regen_rate
+));
+```
+
+### Individual Components
+
+You can also spawn components individually:
+
+```rust
+commands.spawn((
+    PowerBar::new(100.0),
+    PowerLevel::default(),
+    PowerRegeneration::default(),
+    PowerLimits::default(),
+));
+```
+
+## Events
+
+The system uses events for all operations:
+
+```rust
+// Listen to power events
+fn handle_power_events(
+    mut knockout_events: EventReader<KnockedOutEvent>,
+    mut levelup_events: EventReader<LevelUpEvent>,
+) {
+    for event in knockout_events.read() {
+        info!("Entity {:?} was knocked out!", event.entity);
+    }
+    
+    for event in levelup_events.read() {
+        info!("Level up! New level: {}, Power bonus: {}", 
+              event.new_level, event.power_bonus);
+    }
+}
+```
+
+Available events:
+- `SpendPowerEvent`
+- `PowerChangeEvent` 
+- `ApplyLimitEvent`
+- `LiftLimitEvent`
+- `KnockedOutEvent`
+- `ReviveEvent`
+- `LevelUpEvent`
+
+## UI System
+
+The plugin includes a visual power bar that automatically updates:
+
+- Shows current/max power with text display
+- Visualizes limits as colored segments
+- Changes color based on power state (low, regenerating, knocked out)
+- Displays base max in parentheses when limits are active
+
+The UI is automatically created and positioned in the top-left corner. The power bar will appear for any entity with power components.
+
+## Examples
+
+### Running Examples
+
+```bash
+# Basic keyboard controls demo
+cargo run --example simple_demo
+
+# Full-featured UI demo with buttons
+cargo run --example power_demo
+
+# Practical dash ability implementation
+cargo run --example dash_demo
+```
+
+### Dash Ability Example
+
+Here's how you might implement a dash ability:
+
+```rust
+#[derive(Component)]
+struct Player {
+    dash_cooldown: Timer,
+    velocity: Vec2,
+}
+
+fn handle_dash(
+    mut player_query: Query<&mut Player>,
+    mut power_system: PowerSystem,
+    keyboard: Res<ButtonInput<KeyCode>>,
+) {
+    let Ok(mut player) = player_query.single_mut() else { return };
+    
+    if keyboard.just_pressed(KeyCode::Space) && player.dash_cooldown.finished() {
+        // Try to spend power for dash
+        if power_system.try_spend(10.0) {
+            player.velocity += Vec2::new(500.0, 0.0);  // Dash forward
+            player.dash_cooldown.reset();
+            info!("Dash successful!");
+        } else {
+            info!("Not enough power to dash!");
         }
     }
 }
 ```
 
-## Core Components
-
-### PowerBar
-Tracks current and maximum power values.
+### Magic System Example
 
 ```rust
-#[derive(Component)]
-pub struct PowerBar {
-    pub current: f32,      // Current power amount
-    pub max: f32,          // Current maximum (affected by limits)
-    pub base_max: f32,     // Base maximum (before limits)
-    pub is_knocked_out: bool,
-}
-
-// Usage
-let mut power_bar = PowerBar::new(100.0);
-power_bar.spend(25.0);  // Returns true if successful
-power_bar.add(10.0);    // Add power (clamped to max)
-```
-
-### PowerRegeneration
-Handles automatic power recovery over time.
-
-```rust
-#[derive(Component)]
-pub struct PowerRegeneration {
-    pub regen_delay: f32,     // Delay before regen starts (default: 2.5s)
-    pub base_rate: f32,       // Starting regen rate (default: 5.0/s)
-    pub max_rate: f32,        // Maximum regen rate (default: 20.0/s)
-    pub ramp_speed: f32,      // How fast regen accelerates
-    // ... other fields
+fn cast_spell(
+    mut power_system: PowerSystem,
+    keyboard: Res<ButtonInput<KeyCode>>,
+) {
+    if keyboard.just_pressed(KeyCode::KeyF) {
+        // Fireball costs 15 power
+        if power_system.try_spend(15.0) {
+            spawn_fireball();
+            info!("Fireball cast!");
+        }
+    }
+    
+    if keyboard.just_pressed(KeyCode::KeyH) {
+        // Heal costs 20 power
+        if power_system.try_spend(20.0) {
+            heal_player();
+            info!("Heal cast!");
+        }
+    }
 }
 ```
 
-### PowerLimits
-Manages temporary or permanent power restrictions.
+### Debuff System Example
 
 ```rust
-// Apply a 20-point limit that expires in 5 seconds
-power_system.limit_points(
-    player_entity,
-    1,                    // limit ID
-    20.0,                 // points to reduce
-    Color::RED,           // UI color
-    Some(5.0),           // duration (None = permanent)
-    false,               // reset regen cooldown? (pauses regen for 2.5s)
-);
-```
-
-### PowerLevel
-Tracks experience and level progression.
-
-```rust
-#[derive(Component)]
-pub struct PowerLevel {
-    pub level: u32,
-    pub experience: f32,
-    pub experience_to_next: f32,
-}
-```
-
-## Power System API
-
-The `PowerSystem` provides a convenient interface for all power operations:
-
-```rust
-fn example_system(
+fn apply_poison_debuff(
     mut power_system: PowerSystem,
 ) {
-    // Safe operations (return bool for success)
-    if power_system.try_spend(30.0) {
-        println!("Spell cast successfully!");
-    }
-
-    if power_system.can_afford(50.0) {
-        println!("Can afford ultimate ability");
-    }
-
-    // Limit operations with safe variants
-    if power_system.try_limit_points(1, 25.0, Color::PURPLE, Some(10.0), false) {
-        println!("Curse applied!");
-    } else {
-        println!("Target immune to curse!");
-    }
-
-    // Direct operations (always execute)
-    power_system.change(15.0);  // Add power
-    power_system.revive(50.0);  // Revive from knockout
-    power_system.lift(1);       // Remove limit by ID
-}
-```
-
-## Examples
-
-### Basic Usage
-See `examples/simple_demo.rs` for keyboard controls and basic power operations.
-
-### Interactive Demo
-Run `examples/power_demo.rs` for a full GUI demonstration:
-```bash
-cargo run --example power_demo
-```
-
-### Game Integration
-See `examples/dash_demo.rs` for a practical game ability system.
-
-## Advanced Features
-
-### Multiple Limit Types
-
-```rust
-// Fixed point reduction
-power_system.limit_points(1, 20.0, Color::RED, None, false);
-
-// Percentage-based reduction (resets cooldown)
-power_system.limit_percentage(2, 25.0, Color::YELLOW, Some(5.0), true);
-```
-
-### Timed Limits with Auto-Expiry
-
-```rust
-// This limit will automatically remove itself after 10 seconds
-power_system.limit_points(
-    1,
-    30.0,           // Reduce max power by 30
-    Color::PURPLE,  // UI visualization color
-    Some(10.0),     // Duration in seconds
-    true,           // Reset regeneration cooldown when applied (pauses regen for 2.5s)
-);
-```
-
-### Custom Power Bundles
-
-```rust
-// Create custom power configurations
-let custom_bundle = PowerBundle::custom(
-    150.0,  // max power
-    1.0,    // regen delay (seconds)
-    8.0,    // base regen rate
-    30.0,   // max regen rate
-);
-
-commands.spawn((custom_bundle, Player));
-```
-
-### Event Handling
-
-```rust
-fn handle_knockouts(
-    mut knockout_events: EventReader<KnockedOutEvent>,
-    mut level_up_events: EventReader<LevelUpEvent>,
-) {
-    for event in knockout_events.read() {
-        println!("Entity {:?} was knocked out!", event.entity);
-        // Play death sound, trigger respawn timer, etc.
-    }
-
-    for event in level_up_events.read() {
-        println!("Level up! New level: {}, Power bonus: {}",
-                 event.new_level, event.power_bonus);
+    // Poison reduces max power by 30% for 10 seconds
+    if power_system.try_limit_percentage(
+        100,                    // Unique debuff ID
+        30.0,                   // 30% reduction
+        Color::srgb(0.5, 0.8, 0.2),  // Poison green
+        Some(10.0),             // 10 seconds duration
+        true                    // Resets regen (makes it worse)
+    ) {
+        info!("Player poisoned!");
     }
 }
 ```
-
-## UI Integration
-
-The crate includes a built-in power bar UI that automatically:
-- Shows current/max power values
-- Visualizes active limits with colored segments
-- Changes color based on power state (low, regenerating, knocked out)
-- Updates in real-time
-
-The UI is automatically added when you include the `PowerSystemPlugin`.
 
 ## Configuration
 
-### Regeneration Settings
+### Power Regeneration Settings
+
 ```rust
-let mut regen = PowerRegeneration {
-    regen_delay: 3.0,      // 3 second delay before regen starts
-    base_rate: 10.0,       // Start regenerating at 10/second
-    max_rate: 25.0,        // Cap at 25/second
-    ramp_speed: 1.5,       // How quickly regen accelerates
+PowerRegeneration {
+    regen_delay: 2.5,       // Seconds to wait after spending power
+    base_rate: 5.0,         // Initial regeneration rate (power/sec)
+    max_rate: 20.0,         // Maximum regeneration rate
+    ramp_speed: 2.0,        // How quickly to ramp up (rate/sec)
     ..default()
-};
+}
 ```
 
-### Cooldown Reset Behavior
-When a limit with `resets_cooldown: true` is applied, the regeneration timer is reset, causing a 2.5-second pause in power regeneration. This ensures that certain debuffs or abilities properly interrupt the regeneration flow.
+### Power Level Settings
 
-### System Ordering
+```rust
+PowerLevel {
+    level: 1,
+    experience: 0.0,
+    experience_to_next: 100.0,
+}
+```
 
-The plugin uses system sets to ensure proper ordering:
-- `PowerSystemSet::Input` - Event handling
-- `PowerSystemSet::Update` - Core logic updates
-- `PowerSystemSet::UI` - Visual updates
+Level-ups provide power bonuses with diminishing returns:
+- Level 2: +20 power
+- Level 3: +16 power  
+- Level 4: +13.3 power
+- etc.
 
-## Events
+## System Architecture
 
-All power operations generate events for maximum flexibility:
+The power system uses Bevy's ECS architecture with:
 
-- `SpendPowerEvent` - Power spending attempts
-- `PowerChangeEvent` - Direct power modifications
-- `ApplyLimitEvent` - Limit applications
-- `LiftLimitEvent` - Limit removals
-- `KnockedOutEvent` - Knockout notifications
-- `ReviveEvent` - Revival requests
-- `LevelUpEvent` - Level progression
+- **Components**: Store power state (`PowerBar`, `PowerRegeneration`, etc.)
+- **Systems**: Update power state and handle events
+- **Events**: Communicate power changes between systems
+- **Resources**: Global configuration and system access (`PowerSystem`)
 
-## Safe vs Unsafe Operations
+This design allows for:
+- Multiple entities with independent power systems
+- Easy integration with other game systems
+- Flexible event-based communication
+- Clean separation of concerns
 
-The system provides two approaches for most operations:
+## Requirements
 
-**Safe Methods** (recommended for gameplay):
-- `try_spend(amount)` - Won't cause knockout
-- `try_limit_points(id, points, color, duration, resets_cooldown)` - Won't apply if it would cause knockout
-- `can_afford(amount)` - Check before spending
-
-**Direct Methods** (for system/admin use):
-- `spend(amount)` - Always attempts to spend
-- `limit_points(id, points, color, duration, resets_cooldown)` - Always applies limit
-- `change(amount)` - Direct power modification
-
-All methods now automatically operate on the entity with `PowerBar` component - no need to specify which entity!
-
-## Performance
-
-- Minimal overhead when no limits are active
-- Efficient timer updates for temporary limits
-- UI only updates when power state changes
-- Event-driven architecture prevents unnecessary polling
+- Bevy 0.16+
+- Rust 1.70+
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+Licensed under either of
 
-## Contributing
+- Apache License, Version 2.0
+- MIT License
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+at your option.
