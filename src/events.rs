@@ -2,7 +2,7 @@ use crate::limits::LimitType;
 use bevy::prelude::*;
 
 /// Event to spend power
-#[derive(Event, Debug, Clone)]
+#[derive(Message, Debug, Clone)]
 pub struct SpendPowerEvent {
     /// Entity with the PowerBar component
     pub entity: Entity,
@@ -11,7 +11,7 @@ pub struct SpendPowerEvent {
 }
 
 /// Event to change power (add or subtract)
-#[derive(Event, Debug, Clone)]
+#[derive(Message, Debug, Clone)]
 pub struct PowerChangeEvent {
     /// Entity with the PowerBar component
     pub entity: Entity,
@@ -20,7 +20,7 @@ pub struct PowerChangeEvent {
 }
 
 /// Event to apply a power limit
-#[derive(Event, Debug, Clone)]
+#[derive(Message, Debug, Clone)]
 pub struct ApplyLimitEvent {
     /// Entity to apply the limit to
     pub entity: Entity,
@@ -77,7 +77,7 @@ impl ApplyLimitEvent {
 }
 
 /// Event to lift/remove a power limit
-#[derive(Event, Debug, Clone)]
+#[derive(Message, Debug, Clone)]
 pub struct LiftLimitEvent {
     /// Entity to remove the limit from
     pub entity: Entity,
@@ -86,14 +86,14 @@ pub struct LiftLimitEvent {
 }
 
 /// Event sent when player is knocked out
-#[derive(Event, Debug, Clone)]
+#[derive(Message, Debug, Clone)]
 pub struct KnockedOutEvent {
     /// Entity that was knocked out
     pub entity: Entity,
 }
 
 /// Event to revive a knocked out player
-#[derive(Event, Debug, Clone)]
+#[derive(Message, Debug, Clone)]
 pub struct ReviveEvent {
     /// Entity to revive
     pub entity: Entity,
@@ -102,7 +102,7 @@ pub struct ReviveEvent {
 }
 
 /// Event sent when player levels up
-#[derive(Event, Debug, Clone)]
+#[derive(Message, Debug, Clone)]
 pub struct LevelUpEvent {
     /// Entity that leveled up
     pub entity: Entity,

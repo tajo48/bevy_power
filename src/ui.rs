@@ -52,7 +52,7 @@ pub fn setup_power_ui(mut commands: Commands) {
                     ..default()
                 })
                 .insert(BackgroundColor(Color::NONE))
-                .insert(BorderColor(Color::srgb(0.8, 0.8, 0.8)))
+                .insert(BorderColor::all(Color::srgb(0.8, 0.8, 0.8)))
                 .insert(PowerBarBackground) // Add this component to the frame for easy access
                 .with_children(|parent| {
                     // Background

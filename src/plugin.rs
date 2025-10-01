@@ -13,14 +13,14 @@ pub struct PowerSystemPlugin;
 
 impl Plugin for PowerSystemPlugin {
     fn build(&self, app: &mut App) {
-        // Register events
-        app.add_event::<SpendPowerEvent>()
-            .add_event::<PowerChangeEvent>()
-            .add_event::<ApplyLimitEvent>()
-            .add_event::<LiftLimitEvent>()
-            .add_event::<KnockedOutEvent>()
-            .add_event::<ReviveEvent>()
-            .add_event::<LevelUpEvent>();
+        // Register messages
+        app.add_message::<SpendPowerEvent>()
+            .add_message::<PowerChangeEvent>()
+            .add_message::<ApplyLimitEvent>()
+            .add_message::<LiftLimitEvent>()
+            .add_message::<KnockedOutEvent>()
+            .add_message::<ReviveEvent>()
+            .add_message::<LevelUpEvent>();
 
         // Configure system sets
         app.configure_sets(
@@ -112,11 +112,11 @@ impl PowerBundle {
 /// System parameters for convenient power system access
 #[derive(SystemParam)]
 pub struct PowerSystem<'w, 's> {
-    pub spend_events: EventWriter<'w, SpendPowerEvent>,
-    pub change_events: EventWriter<'w, PowerChangeEvent>,
-    pub limit_events: EventWriter<'w, ApplyLimitEvent>,
-    pub lift_events: EventWriter<'w, LiftLimitEvent>,
-    pub revive_events: EventWriter<'w, ReviveEvent>,
+    pub spend_events: MessageWriter<'w, SpendPowerEvent>,
+    pub change_events: MessageWriter<'w, PowerChangeEvent>,
+    pub limit_events: MessageWriter<'w, ApplyLimitEvent>,
+    pub lift_events: MessageWriter<'w, LiftLimitEvent>,
+    pub revive_events: MessageWriter<'w, ReviveEvent>,
     pub power_query: Query<'w, 's, (Entity, &'static mut PowerBar, Option<&'static PowerLimits>)>,
 }
 

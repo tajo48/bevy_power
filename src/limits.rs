@@ -57,7 +57,7 @@ impl PowerLimit {
     pub fn update(&mut self, delta: f32) -> bool {
         if let Some(ref mut timer) = self.duration {
             timer.tick(std::time::Duration::from_secs_f32(delta));
-            timer.finished()
+            timer.is_finished()
         } else {
             false
         }

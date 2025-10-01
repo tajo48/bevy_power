@@ -131,7 +131,7 @@ fn create_demo_ui(commands: &mut Commands) {
                                 ..default()
                             },
                             BackgroundColor(Color::srgb(0.8, 0.4, 0.0)),
-                            BorderColor(Color::WHITE),
+                            BorderColor::all(Color::WHITE),
                         ))
                         .insert(DemoButton::SpendSmall)
                         .with_children(|parent| {
@@ -160,7 +160,7 @@ fn create_demo_ui(commands: &mut Commands) {
                                 ..default()
                             },
                             BackgroundColor(Color::srgb(0.8, 0.2, 0.0)),
-                            BorderColor(Color::WHITE),
+                            BorderColor::all(Color::WHITE),
                         ))
                         .insert(DemoButton::SpendLarge)
                         .with_children(|parent| {
@@ -189,7 +189,7 @@ fn create_demo_ui(commands: &mut Commands) {
                                 ..default()
                             },
                             BackgroundColor(Color::srgb(0.0, 0.8, 0.2)),
-                            BorderColor(Color::WHITE),
+                            BorderColor::all(Color::WHITE),
                         ))
                         .insert(DemoButton::AddPower)
                         .with_children(|parent| {
@@ -226,7 +226,7 @@ fn create_demo_ui(commands: &mut Commands) {
                                 ..default()
                             },
                             BackgroundColor(Color::srgb(0.8, 0.0, 0.8)),
-                            BorderColor(Color::WHITE),
+                            BorderColor::all(Color::WHITE),
                         ))
                         .insert(DemoButton::ApplyPointsLimit)
                         .with_children(|parent| {
@@ -255,7 +255,7 @@ fn create_demo_ui(commands: &mut Commands) {
                                 ..default()
                             },
                             BackgroundColor(Color::srgb(0.8, 0.8, 0.0)),
-                            BorderColor(Color::WHITE),
+                            BorderColor::all(Color::WHITE),
                         ))
                         .insert(DemoButton::ApplyPercentLimit)
                         .with_children(|parent| {
@@ -284,7 +284,7 @@ fn create_demo_ui(commands: &mut Commands) {
                                 ..default()
                             },
                             BackgroundColor(Color::srgb(0.0, 0.8, 0.8)),
-                            BorderColor(Color::WHITE),
+                            BorderColor::all(Color::WHITE),
                         ))
                         .insert(DemoButton::ApplyTimedLimit)
                         .with_children(|parent| {
@@ -321,7 +321,7 @@ fn create_demo_ui(commands: &mut Commands) {
                                 ..default()
                             },
                             BackgroundColor(Color::srgb(0.4, 0.4, 0.8)),
-                            BorderColor(Color::WHITE),
+                            BorderColor::all(Color::WHITE),
                         ))
                         .insert(DemoButton::LiftLimit { id: 1 })
                         .with_children(|parent| {
@@ -350,7 +350,7 @@ fn create_demo_ui(commands: &mut Commands) {
                                 ..default()
                             },
                             BackgroundColor(Color::srgb(0.4, 0.4, 0.8)),
-                            BorderColor(Color::WHITE),
+                            BorderColor::all(Color::WHITE),
                         ))
                         .insert(DemoButton::LiftLimit { id: 2 })
                         .with_children(|parent| {
@@ -379,7 +379,7 @@ fn create_demo_ui(commands: &mut Commands) {
                                 ..default()
                             },
                             BackgroundColor(Color::srgb(0.4, 0.4, 0.8)),
-                            BorderColor(Color::WHITE),
+                            BorderColor::all(Color::WHITE),
                         ))
                         .insert(DemoButton::LiftLimit { id: 3 })
                         .with_children(|parent| {
@@ -416,7 +416,7 @@ fn create_demo_ui(commands: &mut Commands) {
                                 ..default()
                             },
                             BackgroundColor(Color::srgb(0.2, 0.8, 0.2)),
-                            BorderColor(Color::WHITE),
+                            BorderColor::all(Color::WHITE),
                         ))
                         .insert(DemoButton::Revive)
                         .with_children(|parent| {
@@ -445,7 +445,7 @@ fn create_demo_ui(commands: &mut Commands) {
                                 ..default()
                             },
                             BackgroundColor(Color::srgb(0.8, 0.6, 0.0)),
-                            BorderColor(Color::WHITE),
+                            BorderColor::all(Color::WHITE),
                         ))
                         .insert(DemoButton::LevelUp)
                         .with_children(|parent| {
@@ -474,7 +474,7 @@ fn create_demo_ui(commands: &mut Commands) {
                                 ..default()
                             },
                             BackgroundColor(Color::srgb(0.5, 0.2, 0.8)),
-                            BorderColor(Color::WHITE),
+                            BorderColor::all(Color::WHITE),
                         ))
                         .insert(DemoButton::ToggleLimitMethod)
                         .with_children(|parent| {

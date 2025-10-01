@@ -253,7 +253,7 @@ fn handle_input(
     if keyboard.just_pressed(KeyCode::Space) {
         player.last_dash_attempt = time.elapsed_secs();
 
-        if player.dash_cooldown.finished() {
+        if player.dash_cooldown.is_finished() {
             // Try to spend power for dash
             if power_system.try_spend(settings.power_cost) {
                 // Dash successful - add dash velocity
@@ -366,7 +366,7 @@ fn update_ui(
     if let Ok(mut dash_text) = dash_ui_query.single_mut() {
         if power_bar.is_knocked_out {
             **dash_text = "Dash: KNOCKED OUT".to_string();
-        } else if !player.dash_cooldown.finished() {
+        } else if !player.dash_cooldown.is_finished() {
             let remaining =
                 player.dash_cooldown.duration().as_secs_f32() - player.dash_cooldown.elapsed_secs();
             **dash_text = format!("Dash: Cooldown ({:.1}s)", remaining);
@@ -389,7 +389,7 @@ fn update_ui(
                     "Insufficient power! (Need {}, Have {:.0})",
                     settings.power_cost, power_bar.current
                 );
-            } else if !player.dash_cooldown.finished() {
+            } else if !player.dash_cooldown.is_finished() {
                 **status_text = "Dash on cooldown!".to_string();
             }
         } else {

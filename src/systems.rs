@@ -10,7 +10,7 @@ use bevy::prelude::*;
 
 /// System to handle power spending events
 pub fn handle_spend_power(
-    mut events: EventReader<SpendPowerEvent>,
+    mut events: MessageReader<SpendPowerEvent>,
     mut query: Query<(&mut PowerBar, &mut PowerRegeneration, Option<&PowerLimits>)>,
 ) {
     for event in events.read() {
@@ -32,7 +32,7 @@ pub fn handle_spend_power(
 
 /// System to handle power change events (add/subtract)
 pub fn handle_power_change(
-    mut events: EventReader<PowerChangeEvent>,
+    mut events: MessageReader<PowerChangeEvent>,
     mut query: Query<&mut PowerBar>,
 ) {
     for event in events.read() {
@@ -66,9 +66,9 @@ pub fn regenerate_power(
 
 /// System to handle applying power limits
 pub fn handle_apply_limit(
-    mut events: EventReader<ApplyLimitEvent>,
+    mut events: MessageReader<ApplyLimitEvent>,
     mut query: Query<(&mut PowerBar, &mut PowerRegeneration, &mut PowerLimits)>,
-    mut knocked_out_events: EventWriter<KnockedOutEvent>,
+    mut knocked_out_events: MessageWriter<KnockedOutEvent>,
 ) {
     for event in events.read() {
         if let Ok((mut power_bar, mut regen, mut limits)) = query.get_mut(event.entity) {
@@ -109,7 +109,7 @@ pub fn handle_apply_limit(
 
 /// System to handle lifting power limits
 pub fn handle_lift_limit(
-    mut events: EventReader<LiftLimitEvent>,
+    mut events: MessageReader<LiftLimitEvent>,
     mut query: Query<(&mut PowerBar, &mut PowerLimits)>,
 ) {
     for event in events.read() {
@@ -154,7 +154,7 @@ pub fn update_limit_timers(
 }
 
 /// System to handle revival events
-pub fn handle_revive(mut events: EventReader<ReviveEvent>, mut query: Query<&mut PowerBar>) {
+pub fn handle_revive(mut events: MessageReader<ReviveEvent>, mut query: Query<&mut PowerBar>) {
     for event in events.read() {
         if let Ok(mut power_bar) = query.get_mut(event.entity) {
             power_bar.revive(event.power_amount);
@@ -165,7 +165,7 @@ pub fn handle_revive(mut events: EventReader<ReviveEvent>, mut query: Query<&mut
 /// System to handle level up mechanics
 pub fn handle_level_up(
     mut query: Query<(&mut PowerBar, &mut PowerLevel)>,
-    mut level_up_events: EventWriter<LevelUpEvent>,
+    mut level_up_events: MessageWriter<LevelUpEvent>,
 ) {
     for (mut power_bar, mut power_level) in query.iter_mut() {
         // This would be triggered by game events adding experience
@@ -187,7 +187,7 @@ pub fn handle_level_up(
 /// System to detect knockout conditions
 pub fn detect_knockout(
     mut query: Query<(Entity, &mut PowerBar), Changed<PowerBar>>,
-    mut knocked_out_events: EventWriter<KnockedOutEvent>,
+    mut knocked_out_events: MessageWriter<KnockedOutEvent>,
 ) {
     for (entity, mut power_bar) in query.iter_mut() {
         if !power_bar.is_knocked_out && (power_bar.current <= 0.0 || power_bar.max <= 0.0) {
