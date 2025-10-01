@@ -99,7 +99,13 @@ impl PowerLevel {
         self.experience_to_next *= 1.5; // Increase exp requirement
 
         // Calculate power bonus - diminishing returns
-        let bonus = 20.0 / (1.0 + (self.level as f32 - 1.0) * 0.2);
+        // let bonus = (20.0 / (10.0 + (self.level as f32 - 1.0) * 0.2));
+
+        let bonus = 5.0
+            + (self.level as f32 - 44.0).clamp(0., 1.0) * 3.0
+            + (self.level as f32 - 64.0).clamp(0., 1.0) * 4.0
+            + (self.level as f32 - 84.0).clamp(0., 1.0) * -4.0
+            + (self.level as f32 - 104.0).clamp(0., 1.0) * -3.0;
         bonus
     }
 
