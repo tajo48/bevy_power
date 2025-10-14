@@ -2,6 +2,12 @@
 name = "bevy_power"
 version = "0.1.0"
 edition = "2021"
+authors = ["Piotr Świercz <tajo48@proton.me>"]
+license = "MIT"
+description = "A comprehensive power/energy system for Bevy games with regeneration, limits, knockouts, leveling, and UI components"
+repository = "https://github.com/piotrswierczek/bevy_power"
+keywords = ["bevy", "gamedev", "power", "energy", "ui"]
+categories = ["game-development", "gui"]
 
 [dependencies]
 bevy = "0.17.1"
