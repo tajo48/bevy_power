@@ -1,6 +1,6 @@
 [package]
 name = "bevy_power"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Piotr Świercz <tajo48@proton.me>"]
 license = "MIT"
