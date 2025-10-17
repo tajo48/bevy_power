@@ -19,7 +19,7 @@ Add to your `Cargo.toml`:
 ```toml
 [dependencies]
 bevy_power = "0.1.0"
-bevy = "0.17.1"
+bevy = "0.17.2"
 ```
 
 Basic setup:
