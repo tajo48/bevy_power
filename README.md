@@ -122,17 +122,17 @@ fn use_abilities(mut power_system: PowerSystem, input: Res<ButtonInput<KeyCode>>
             println!("Spell cast!");
         }
     }
-    
+
     if input.just_pressed(KeyCode::KeyR) {
         // Add power pickup
         power_system.change(20.0);
     }
-    
+
     if input.just_pressed(KeyCode::KeyL) {
         // Apply curse (reduces max power by 30 points for 10 seconds)
         power_system.limit_points(1, 30.0, Color::PURPLE, Some(10.0), true);
     }
-    
+
     if input.just_pressed(KeyCode::KeyC) {
         // Remove curse
         power_system.lift(1);
@@ -170,7 +170,7 @@ fn handle_knockout(
 ) {
     for event in knocked_out.read() {
         println!("Player {} was knocked out!", event.entity);
-        
+
         // Revive after 3 seconds with 50% power
         power_system.revive(50.0);
     }
@@ -224,9 +224,9 @@ fn listen_to_power_events(
     for event in knocked_out.read() {
         println!("Entity {} was knocked out!", event.entity);
     }
-    
+
     for event in level_up.read() {
-        println!("Leveled up to {}! Gained {} power!", 
+        println!("Leveled up to {}! Gained {} power!",
                  event.new_level, event.power_bonus);
     }
 }
@@ -234,7 +234,7 @@ fn listen_to_power_events(
 
 Available events:
 - `KnockedOutEvent`
-- `LevelUpEvent` 
+- `LevelUpEvent`
 - `SpendPowerEvent`
 - `PowerChangeEvent`
 - `ApplyLimitEvent`
@@ -260,11 +260,3 @@ This system is perfect for:
 - **Strategy Games**: Resource management with temporary modifiers
 - **Survival Games**: Hunger/thirst systems with food effects
 - **Fighting Games**: Special move meters with cooldowns
-
-## License
-
-Licensed under either of:
-- Apache License, Version 2.0
-- MIT License
-
-at your option.
