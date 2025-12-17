@@ -10,7 +10,7 @@ keywords = ["bevy", "gamedev", "power", "energy", "ui"]
 categories = ["game-development", "gui"]
 
 [dependencies]
-bevy = "0.17.2"
+bevy = "0.17.3"
 
 [[example]]
 name = "power_demo"
